@@ -1,103 +1,136 @@
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-
-import java.awt.BorderLayout;
-import java.awt.EventQueue;
-import java.awt.GridLayout;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
 
 public class MyApp extends JFrame {
-    private JTextField screen;   // pole tektowe pełniące rolę wyświetlacza
-    private JButton button_1 = new JButton("1");
-    private JButton button_2 = new JButton("2");
-    private JButton button_3 = new JButton("3");
-    private JButton button_4 = new JButton("4");
-    private JButton button_5 = new JButton("5");
-    private JButton button_6 = new JButton("6");
-    private JButton button_7 = new JButton("7");
-    private JButton button_8 = new JButton("8");
-    private JButton button_9 = new JButton("9");
-    private JButton button_0 = new JButton("0");
-    private JButton button_add = new JButton("+");
-    private JButton button_substract = new JButton("-");
-    private JButton button_divide = new JButton("/");
-    private JButton button_multiply = new JButton("*");
-    private JButton button_equal = new JButton("=");
-    private JButton button_C = new JButton("C");
-    private JButton button_backspace = new JButton("<-");
+
+    private JTextField screen;
+    private double firstValue = 0;
+    private String operator = "";
+    private boolean startNewNumber = true;
 
     public MyApp() {
-      JPanel panel = new JPanel(new BorderLayout());
-      screen = new JTextField(10);
-      panel.add("North", screen);
-      JPanel panelButtons = new JPanel(new GridLayout(5, 4)); 
-        // menadżer rozkładu z 5 wierszami i czterema kolumnami
-      button_9.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            screen.setText( screen.getText() + "9"); // dodajemy 9 do aktualnego testu z wyświetlacza
-        }
-        
-      });  
-      panelButtons.add(button_9); 
+        setTitle("Kalkulator");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-      panelButtons.add(button_8);
-      button_8.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            String text = screen.getText();  // odczytujemy tekst z wyświetlacza
-            screen.setText( text + "8   "); // dodajemy 8 do aktualnego testu z wyświetlacza
+        // ===== WYŚWIETLACZ =====
+        screen = new JTextField("0");
+        screen.setFont(new Font("Arial", Font.BOLD, 24));
+        screen.setHorizontalAlignment(JTextField.RIGHT);
+        screen.setEditable(false);
+        screen.setBackground(new Color(30, 30, 30));
+        screen.setForeground(Color.WHITE);
+        screen.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        }
-      });  
-      panelButtons.add(button_7);
-      button_divide.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            String text = screen.getText();  // odczytujemy tekst z wyświetlacza
-            if (!text.equals("")){
-               int valueOne = Integer.parseInt(text);
-            }
-        }
-        
-      });  
-      panelButtons.add(button_divide);
-      panelButtons.add(button_6);
-      panelButtons.add(button_5);
-      panelButtons.add(button_4);
-      panelButtons.add(button_multiply);
-      panelButtons.add(button_3);
-      panelButtons.add(button_2);
-      panelButtons.add(button_1);
-      panelButtons.add(button_substract);
-      panelButtons.add(button_C);
-      panelButtons.add(button_0);
-      panelButtons.add(button_backspace);
-      panelButtons.add(button_add);
-      panelButtons.add(new JLabel());
-      panelButtons.add(new JLabel());
-      panelButtons.add(new JLabel());
-      panelButtons.add(button_equal);
-      panel.add("Center", panelButtons); // wstawienie panelu z przyciskami na panel
-      setContentPane(panel); // ustawienie głównego panelu aplikacji
-      pack();   // dopasowanie rozmiaru okienka aplikacji do zawartości
-      setVisible(true);
+        // ===== PANEL PRZYCISKÓW =====
+        JPanel panelButtons = new JPanel(new GridLayout(5, 4, 5, 5));
+        panelButtons.setBackground(new Color(45, 45, 45));
+        panelButtons.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // ===== PRZYCISKI =====
+        addButton(panelButtons, "7", e -> addDigit("7"));
+        addButton(panelButtons, "8", e -> addDigit("8"));
+        addButton(panelButtons, "9", e -> addDigit("9"));
+        addOperatorButton(panelButtons, "/");
+
+        addButton(panelButtons, "4", e -> addDigit("4"));
+        addButton(panelButtons, "5", e -> addDigit("5"));
+        addButton(panelButtons, "6", e -> addDigit("6"));
+        addOperatorButton(panelButtons, "*");
+
+        addButton(panelButtons, "1", e -> addDigit("1"));
+        addButton(panelButtons, "2", e -> addDigit("2"));
+        addButton(panelButtons, "3", e -> addDigit("3"));
+        addOperatorButton(panelButtons, "-");
+
+        addButton(panelButtons, "C", e -> clear(), new Color(200, 80, 80));
+        addButton(panelButtons, "0", e -> addDigit("0"));
+        addButton(panelButtons, "<-", e -> backspace());
+        addOperatorButton(panelButtons, "+");
+
+        panelButtons.add(new JLabel());
+        panelButtons.add(new JLabel());
+        panelButtons.add(new JLabel());
+        addButton(panelButtons, "=", e -> calculate(), new Color(80, 160, 220));
+
+        // ===== UKŁAD OKNA =====
+        setLayout(new BorderLayout());
+        add(screen, BorderLayout.NORTH);
+        add(panelButtons, BorderLayout.CENTER);
+
+        pack();
+        setLocationRelativeTo(null);
+        setVisible(true);
     }
-    
+
+    // ===== METODY LOGIKI =====
+    private void addDigit(String digit) {
+        if (startNewNumber) {
+            screen.setText(digit);
+            startNewNumber = false;
+        } else {
+            screen.setText(screen.getText() + digit);
+        }
+    }
+
+    private void addOperator(String op) {
+        firstValue = Double.parseDouble(screen.getText());
+        operator = op;
+        startNewNumber = true;
+    }
+
+    private void calculate() {
+        double secondValue = Double.parseDouble(screen.getText());
+        double result = 0;
+
+        switch (operator) {
+            case "+": result = firstValue + secondValue; break;
+            case "-": result = firstValue - secondValue; break;
+            case "*": result = firstValue * secondValue; break;
+            case "/": result = secondValue != 0 ? firstValue / secondValue : 0; break;
+        }
+
+        screen.setText(String.valueOf(result));
+        startNewNumber = true;
+    }
+
+    private void clear() {
+        screen.setText("0");
+        firstValue = 0;
+        operator = "";
+        startNewNumber = true;
+    }
+
+    private void backspace() {
+        String text = screen.getText();
+        if (text.length() > 1) {
+            screen.setText(text.substring(0, text.length() - 1));
+        } else {
+            screen.setText("0");
+            startNewNumber = true;
+        }
+    }
+
+    // ===== METODY POMOCNICZE DO PRZYCISKÓW =====
+    private void addButton(JPanel panel, String text, ActionListener action) {
+        addButton(panel, text, action, new Color(70, 70, 70));
+    }
+
+    private void addButton(JPanel panel, String text, ActionListener action, Color bg) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Arial", Font.BOLD, 16));
+        button.setBackground(bg);
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.addActionListener(action);
+        panel.add(button);
+    }
+
+    private void addOperatorButton(JPanel panel, String op) {
+        addButton(panel, op, e -> addOperator(op), new Color(100, 100, 160));
+    }
 
     public static void main(String[] args) {
-        EventQueue.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new MyApp();
-            }
-        });
-
+        EventQueue.invokeLater(MyApp::new);
     }
-
 }

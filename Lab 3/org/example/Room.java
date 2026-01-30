@@ -1,34 +1,39 @@
 package org.example;
 
-import java.awt.*;
-
 public class Room extends MapSite {
-    private MapSite[] sides = new MapSite[4];
 
-    public Room() {
-        for (int i = 0; i < 4; i++)
-            sides[i] = null;
-    }
+    private MapSite[] sides = new MapSite[4];
+    private Bomb bomb;
 
     public void setSide(Directions dir, MapSite site) {
         sides[dir.ordinal()] = site;
     }
 
-    public MapSite getSide(Directions dir) {
-        return sides[dir.ordinal()];
+    public void setBomb(Bomb bomb) {
+        this.bomb = bomb;
+    }
+
+    public boolean hasBomb() {
+        return bomb != null;
     }
 
     @Override
-    public void draw(Image image) {
+    public void draw(java.awt.Image image) {
         int x = getX();
         int y = getY();
-        for (int i = 0; i < 4; i++) {
-            MapSite side = sides[i];
+
+        for (MapSite side : sides) {
             if (side != null) {
                 side.setX(x);
                 side.setY(y);
                 side.draw(image);
             }
+        }
+
+        if (bomb != null) {
+            bomb.setX(x);
+            bomb.setY(y);
+            bomb.draw(image);
         }
     }
 }

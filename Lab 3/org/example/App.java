@@ -1,41 +1,43 @@
 package org.example;
 
-import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import javax.swing.*;
 
 public class App extends JFrame {
+
     private JMyPanel panel;
     private Image image;
 
+    private Room[][] rooms;
+    private Player player;
+
+    private final int rows = 3;
+    private final int cols = 5;
+
     public App() {
+        setTitle("Labirynt");
         setSize(600, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        panel = new JMyPanel();
 
-        JButton button = new JButton("Draw maze");
-        button.addActionListener(new ActionListener() {
+        panel = new JMyPanel();
+        add(panel);
+
+        addKeyListener(new KeyAdapter() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                image = panel.getImage();
-                drawMaze();
-                panel.repaint();
+            public void keyPressed(KeyEvent e) {
+                handleMove(e.getKeyCode());
             }
         });
 
-        setLayout(new BorderLayout());
-        JPanel menuPanel = new JPanel(new GridLayout(1, 1));
-        menuPanel.add(button);
-        add(menuPanel, BorderLayout.NORTH);
-        add(panel, BorderLayout.CENTER);
+        setFocusable(true);
+        SwingUtilities.invokeLater(this::setupMaze);
     }
 
-    private void drawMaze() {
-        int rows = 3;
-        int cols = 5;
-
-        Room[][] rooms = new Room[rows][cols];
+    private void setupMaze() {
+        image = panel.getImage();
+        rooms = new Room[rows][cols];
 
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
@@ -52,29 +54,44 @@ public class App extends JFrame {
             }
         }
 
-        // drzwi między pokojami
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols - 1; j++) {
-                Door door = new Door(Directions.East, true);
-                rooms[i][j].setSide(Directions.East, door);
-                rooms[i][j + 1].setSide(Directions.West, door);
-            }
+        rooms[0][1].setBomb(new Bomb());
+        rooms[1][3].setBomb(new Bomb());
+        rooms[2][2].setBomb(new Bomb());
+
+        player = new Player(0, 0);
+        redraw();
+    }
+
+    private void handleMove(int key) {
+        switch (key) {
+            case KeyEvent.VK_UP -> player.move(-1, 0, rows, cols);
+            case KeyEvent.VK_DOWN -> player.move(1, 0, rows, cols);
+            case KeyEvent.VK_LEFT -> player.move(0, -1, rows, cols);
+            case KeyEvent.VK_RIGHT -> player.move(0, 1, rows, cols);
         }
 
-        for (int i = 0; i < rows - 1; i++) {
-            for (int j = 0; j < cols; j++) {
-                Door door = new Door(Directions.South, true);
-                rooms[i][j].setSide(Directions.South, door);
-                rooms[i + 1][j].setSide(Directions.North, door);
-            }
+        if (rooms[player.getRow()][player.getCol()].hasBomb()) {
+            JOptionPane.showMessageDialog(this, "GAME OVER");
+            System.exit(0);
         }
+
+        redraw();
+    }
+
+    private void redraw() {
+        Graphics g = image.getGraphics();
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, panel.getWidth(), panel.getHeight());
 
         for (int i = 0; i < rows; i++)
             for (int j = 0; j < cols; j++)
                 rooms[i][j].draw(image);
+
+        player.draw(image, rooms[player.getRow()][player.getCol()]);
+        panel.repaint();
     }
 
     public static void main(String[] args) {
-        java.awt.EventQueue.invokeLater(() -> new App().setVisible(true));
+        SwingUtilities.invokeLater(() -> new App().setVisible(true));
     }
 }
